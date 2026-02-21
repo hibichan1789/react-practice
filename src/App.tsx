@@ -1,31 +1,40 @@
 // src/App.tsx
+
 import { useState } from "react";
 
-type Color = "青"|"黄"|"赤"
-function Light({color}:{color:Color}){
-  return <p>今の色は{color}色です</p>
-}
-type SwitchLight = {
-  color:Color;
-  clickAction:()=>void;
-}
-function SwitchButton({color, clickAction}:SwitchLight){
-  return(
-    <div>
-      <button value={color} onClick={clickAction}>{color}にする</button>
-    </div>
-  );
-}
-export default function TrafficSignal(){
-  const [currentColor, setCurrentColor] = useState<Color>("青");
-  function switchAction(color:Color){
-    setCurrentColor(color);
-  }
-  const colors:Color[] = ["青", "黄", "赤"];
+function TemperatureDisplay({temperature}:{temperature:number}){
   return(
     <>
-    <Light color={currentColor}/>
-    {colors.map(color=> <SwitchButton key={color} color={color} clickAction={()=>switchAction(color)}/>)}
+      <p>今の温度は{temperature}℃です</p>
+      {temperature >= 30 ? <p>熱いです</p>: <p>快適です</p>}
     </>
-  )
+  );
+}
+type SetTemperatureButtonProp = {
+  degree:number;
+  isRaise:boolean;
+  clickAction:()=>void;
+}
+function SetTemperatureButton({degree, isRaise, clickAction}:SetTemperatureButtonProp){
+  return <button onClick={clickAction}>温度を{degree}℃{isRaise ? "上げる" : "下げる"}</button>
+}
+const initialTemperature = 20
+const degree = 5;
+export default function WeatherStation(){
+  const [currentTemperature, SetCurrentTemperature] = useState<number>(initialTemperature);
+  function clickSetTemperature(isRaise:boolean){
+    if(isRaise){
+      SetCurrentTemperature(currentTemperature + degree);
+    }
+    else{
+      SetCurrentTemperature(currentTemperature - degree);
+    }
+  }
+  return(
+    <>
+      <TemperatureDisplay temperature={currentTemperature}/>
+      <SetTemperatureButton clickAction={()=>clickSetTemperature(true)} degree={degree} isRaise={true}/>
+      <SetTemperatureButton clickAction={()=>clickSetTemperature(false)} degree={degree} isRaise={false}/>
+    </>
+  );
 }
