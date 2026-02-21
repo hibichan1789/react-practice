@@ -1,49 +1,55 @@
 // src/App.tsx
 
 import { useState } from "react";
-type IsCorrect = boolean|null
-function AnswerMessage({isCorrect}:{isCorrect:IsCorrect}){
-  if(isCorrect === null){
-    return <p>答えを選んでね</p>
-  }
-  return <p>{isCorrect ? "正解!" : "不正解..."}</p>
-}
-type AnswerButtonProps = {
-  answer:string;
-  clickAction:()=>void;
-}
-function AnswerButton({answer, clickAction}:AnswerButtonProps){
-  return <button onClick={clickAction}>{answer}</button>
-}
-type ResetButtonProps = {
-  clickAction:()=>void;
-}
-function ResetButton({clickAction}:ResetButtonProps){
-  return <button onClick={clickAction}>リセット</button>
-}
-export default function QuizGame(){
-  const [isCorrect, setIsCorrect] = useState<IsCorrect>(null);
-  const [selectedAnswer, setSelectedAnswer] = useState<string>("?");
-  function initializeQuiz(){
-    setIsCorrect(null);
-    setSelectedAnswer("?");
-  }
-  function checkAnswer(answer:string){
-    setSelectedAnswer(answer);
-    if(answer === "5"){
-      setIsCorrect(true);
+import { Fragment } from "react";
+export default function BoxList(){
+  const [boxes, setBoxes] = useState<string[]>(Array(9).fill("?"));
+  const [xIsNext, setXIsNext] = useState<boolean>(true);
+  const winner = calculateWinner(boxes);
+  function changeBox(targetIndex:number){
+    if(boxes[targetIndex] !== "?" || winner){
+      return;
     }
-    else{
-      setIsCorrect(false);
-    }
+    const nextBoxes = boxes.map((box, boxIndex) =>{
+                if(boxIndex === targetIndex){
+                box = xIsNext ? "X" : "O";
+                }
+              return box;
+              });
+    setBoxes(nextBoxes);
+    setXIsNext(!xIsNext);
   }
   return(
-    <>
-      <p>2 + 3 = {selectedAnswer}</p>
-      <AnswerMessage isCorrect={isCorrect}/>
-      <AnswerButton clickAction={()=>checkAnswer("4")} answer="4"/>
-      <AnswerButton clickAction={()=>checkAnswer("5")} answer="5"/>
-      {isCorrect !== null ? <ResetButton clickAction={()=>initializeQuiz()}/> : ""}
-    </>
+    <div>
+      {winner && <p>勝者は {winner} !!!!</p>}
+      {boxes.map((box, boxIndex) => {
+        return(
+          <Fragment key={boxIndex}>
+            <button onClick={()=>changeBox(boxIndex)}>{box}</button>
+            {boxIndex % 3 === 2 ? <br/> : ""}
+          </Fragment>
+        );
+    })}
+    </div>
   );
+}
+
+function calculateWinner(boxes:string[]){
+  const lines = [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+    [0, 4, 8],
+    [2, 4, 6],
+  ]
+  for(const line of lines){
+    const [a, b, c] = line;
+    if(boxes[a] !== "?" && boxes[a] === boxes[b] && boxes[a] === boxes[c]){
+      return boxes[a];
+    }
+  }
+  return null
 }
