@@ -1,38 +1,48 @@
-// src/App.tsx
+// src/App.ts
 
 import { useState } from "react";
-
-function DisplayName({name}:{name:string}){
-  return <h1>{name}</h1>
-}
-function InputForm({currentText, handleText}:{currentText:string; handleText:(inputValue:string)=>void}){
+import { v4 as uuid4 } from "uuid";
+function FormTodo({currentText, handleChange, handleSubmit}:{currentText:string;handleChange:(text:string)=>void;handleSubmit:(text:string)=>void}){
   return(
     <div>
-      <label htmlFor="input-name">名前: </label>
-      <input type="text" value={currentText} id="input-name" onChange={(event)=>handleText(event.target.value)}/>
+      <input type="text" value={currentText} onChange={(event)=>handleChange(event.target.value)}/>
+      <button type="button" disabled={currentText.length === 0} onClick={()=>handleSubmit(currentText)}>追加</button>
     </div>
   );
 }
-function UpperButton({handleClick}:{handleClick:()=>void}){
-  return <button onClick={handleClick}>大文字にする</button>
+function DisplayTodo({todos, handleDelete}:{todos:Todo[]; handleDelete:(targetId:string)=>void}){
+  return(
+    <ul>
+      {todos.map(todo=> <li key={todo.id}>{todo.name}<button type="button" onClick={()=>handleDelete(todo.id)}>削除</button></li>)}
+    </ul>
+  );
 }
-export default function NameApp(){
+
+type Todo = {
+  id:string;
+  name:string;
+}
+export default function TodoApp(){
   const [currentText, setCurrentText] = useState<string>("");
-  const isLong = currentText.length >= 10;
-  function handleInput(text:string){
+  const [todos, setTodos] = useState<Todo[]>([]);
+
+  function handleChange(text:string){
     setCurrentText(text);
   }
-  function handleToUpper(){
-    const textUpperCase = currentText.toUpperCase();
-    setCurrentText(textUpperCase);
+  function handleSubmit(text:string){
+    const newTodo = {id:uuid4(), name:text};
+    const newTodos = [...todos, newTodo];
+    setTodos(newTodos);
+    setCurrentText("");
+  }
+  function handleDelete(targetId:string){
+    const deletedTodos = todos.filter(todo => todo.id !== targetId);
+    setTodos(deletedTodos);
   }
   return(
     <>
-      <DisplayName name={currentText}/>
-      <InputForm currentText={currentText} handleText={handleInput}/>
-      <UpperButton handleClick={handleToUpper}/>
-      {currentText.length === 0 ? <p>名前を入力してください</p> : ""}
-      {isLong ? <p style={{color:"red"}}>文字が長すぎます</p> : ""}
+      <FormTodo currentText={currentText} handleChange={handleChange} handleSubmit={handleSubmit}/>
+      <DisplayTodo todos={todos} handleDelete={handleDelete}/>
     </>
   );
 }
