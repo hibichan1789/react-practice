@@ -1,48 +1,65 @@
 // src/App.ts
 
 import { useState } from "react";
-import { v4 as uuid4 } from "uuid";
-function FormTodo({currentText, handleChange, handleSubmit}:{currentText:string;handleChange:(text:string)=>void;handleSubmit:(text:string)=>void}){
+import { v4 as uuid } from "uuid";
+type Name = {
+  firstName:string;
+  lastName:string;
+}
+type RegisteredName = Name&{id:string};
+
+function DisplayError({errorMessage}:{errorMessage:string}){
+  return <h2 style={{color:"red"}}>{errorMessage}</h2>
+}
+function FormName({firstName, lastName,changeFirstName, changeLastName, handleSubmit}:Name&{changeFirstName:(name:string)=>void;changeLastName:(name:string)=>void;handleSubmit:(event:React.SubmitEvent<HTMLFormElement>)=>void}){
   return(
-    <div>
-      <input type="text" value={currentText} onChange={(event)=>handleChange(event.target.value)}/>
-      <button type="button" disabled={currentText.length === 0} onClick={()=>handleSubmit(currentText)}>追加</button>
-    </div>
+    <form onSubmit={(event)=>handleSubmit(event)}>
+      <input id="firstName" type="text" value={firstName} onChange={(event)=>changeFirstName(event.target.value)}  placeholder="first name"/>
+      <input id="lastName" type="text" value={lastName} onChange={(event)=>changeLastName(event.target.value)}  placeholder="last name"/>
+      <button type="submit">表示</button>
+    </form>
   );
 }
-function DisplayTodo({todos, handleDelete}:{todos:Todo[]; handleDelete:(targetId:string)=>void}){
+function DisplayNames({registeredNames, handleDelete}:{registeredNames:RegisteredName[]; handleDelete:(targetId:string)=>void}){
   return(
     <ul>
-      {todos.map(todo=> <li key={todo.id}>{todo.name}<button type="button" onClick={()=>handleDelete(todo.id)}>削除</button></li>)}
+      {registeredNames.map(name=><li key={name.id}>{`${name.firstName} ${name.lastName}`}<button onClick={()=>handleDelete(name.id)}>削除</button></li>)}
     </ul>
   );
 }
 
-type Todo = {
-  id:string;
-  name:string;
-}
-export default function TodoApp(){
-  const [currentText, setCurrentText] = useState<string>("");
-  const [todos, setTodos] = useState<Todo[]>([]);
-
-  function handleChange(text:string){
-    setCurrentText(text);
+export default function NameApp(){
+  const [name, setName] = useState<Name>({firstName:"", lastName:""})
+  const [registeredNames, setRegisteredNames] = useState<RegisteredName[]>([]);
+  const [errorMessage, setErrorMessage] = useState("");
+  function handleSubmit(event:React.SubmitEvent<HTMLFormElement>){
+    event.preventDefault();
+    if(name.firstName.length === 0 || name.lastName.length === 0){
+      setErrorMessage("入力が不適切です");
+      return;
+    }
+    setErrorMessage("");
+    const newRegisteredNames = [...registeredNames, {id:uuid(), firstName:name.firstName, lastName:name.lastName}];
+    setRegisteredNames(newRegisteredNames);
+    setName({firstName:"", lastName:""});
   }
-  function handleSubmit(text:string){
-    const newTodo = {id:uuid4(), name:text};
-    const newTodos = [...todos, newTodo];
-    setTodos(newTodos);
-    setCurrentText("");
+  function changeFirstName(newFirstName:string){
+    const newName:Name = {...name, firstName:newFirstName};
+    setName(newName);
+  }
+  function changeLastName(newLastName:string){
+    const newName:Name = {...name, lastName:newLastName};
+    setName(newName);
   }
   function handleDelete(targetId:string){
-    const deletedTodos = todos.filter(todo => todo.id !== targetId);
-    setTodos(deletedTodos);
+    const deletedNames = registeredNames.filter(name => name.id !== targetId);
+    setRegisteredNames(deletedNames);
   }
   return(
     <>
-      <FormTodo currentText={currentText} handleChange={handleChange} handleSubmit={handleSubmit}/>
-      <DisplayTodo todos={todos} handleDelete={handleDelete}/>
+      <DisplayError errorMessage={errorMessage}/>
+      <FormName firstName={name.firstName} lastName={name.lastName} handleSubmit={handleSubmit} changeFirstName={changeFirstName} changeLastName={changeLastName}/>
+      <DisplayNames registeredNames={registeredNames} handleDelete={handleDelete}/>
     </>
   );
 }
