@@ -1,69 +1,85 @@
 // src/App.tsx
 
 import { useState } from "react";
-import { v4 as uuidv4 } from "uuid";
-type Product = {
-  name:string;
-  price:number;
-}
-type TotalPriceProps = {
-  price:number;
-  priceTaxIncluded:number;
-}
-function DisplayTotalPrice({price, priceTaxIncluded}:TotalPriceProps){
-  return <p>小計: {formatPrice(price)} (税込み:{formatPrice(priceTaxIncluded)})</p>
-}
-function ProductByButton({name, price, handleClick}:Product&{handleClick:()=>void}){
-  return <button onClick={handleClick}>{name} {price}</button>
-}
-function DisplayLogs({logs, handleDelete}:{logs:ProductLog[], handleDelete:(id:string)=>void}){
+
+function TempDisplay({temperature, currentOperation}:{temperature:number; currentOperation:Operation}){
+  const message = getTempMessage(temperature);
+  const style = getDisplayStyle(currentOperation);
   return(
-    <ul>
-      {logs.map(log=><li key={log.id}>{log.name} {formatPrice(log.price)}<button onClick={()=>handleDelete(log.id)}>削除</button></li>)}
-    </ul>
+    <div style={style}>
+      <p>現在の温度: {temperature} ℃</p>
+      <p>{message}</p>
+    </div>
   );
 }
-const products:Product[] = [
-  {name:"リンゴ", price:150},
-  {name:"バナナ", price:100},
-  {name:"ミカン", price:80}
+function getDisplayStyle(operation:Operation){
+  if(operation === "heating"){
+    return {backgroundColor:"rgb(191, 56, 56)"};
+  }
+  else if(operation === "cooling"){
+    return {backgroundColor:"rgba(149, 204, 255, 1)"};
+  }
+  return {backgroundColor:"rgba(202, 229, 205, 1)"}
+}
+function getTempMessage(temperature:number){
+  const isHot = temperature >= 30;
+  const isCold = temperature <= 10;
+  const isComfortable = !isHot && !isCold;
+  const message = isComfortable ? "快適です" : (isHot ? "暑すぎます" : "寒すぎます");
+  return message;
+}
+function ChangeTemperatureButton({isWarm, handleClick}:{isWarm:boolean, handleClick:(isWarm:boolean)=>void}){
+  return <button onClick={()=>handleClick(isWarm)}>{isWarm ? "+" : "-"}</button>
+}
+function ChangeTemplateTemperature({name, temperature, handleClick}:TemplateTemperature&{handleClick:(temperature:number)=>void}){
+  return <button onClick={()=>handleClick(temperature)}>{name}: {temperature}℃</button>
+}
+function ChangeOperation({operation, handleClick}:{operation:Operation; handleClick:(operation:Operation)=>void}){
+  return <button onClick={()=>handleClick(operation)}>{operation}</button>
+}
+type Operation = "heating"|"cooling"|"blower";
+const INITIAL_TEMPERATURE = 20;
+type TemplateTemperature = {
+  name:string;
+  temperature:number;
+}
+const templateTemperatures:TemplateTemperature[] = [
+  {name:"お風呂", temperature:40},
+  {name:"サウナ", temperature:90},
+  {name:"氷水", temperature:0}
 ]
-type ProductLog = Product&{id:string};
-const TAX = 1.1;
-export default function ShoppingApp(){
-  const [productLogs, setProductLogs] = useState<ProductLog[]>([]);
-  const currentTotal = productLogs.reduce((total, log)=> total + log.price, 0);
-  function handleBuy(name:string, price:number){
-    const newLogs:ProductLog[] = [...productLogs, {id:uuidv4(), name, price}]
-    setProductLogs(newLogs);
+export default function ThermostatApp(){
+  const [currentTemperature, setCurrentTemperature] = useState<number>(INITIAL_TEMPERATURE);
+  const [currentOperation, setCurrentOperation] = useState<Operation>("blower");
+  function handleTemperature(isWarm:boolean){
+    if(isWarm){
+      setCurrentTemperature(currentTemperature + 1);
+    }
+    else{
+      setCurrentTemperature(currentTemperature - 1);
+    }
   }
-  function handleReset(){
-    setProductLogs([]);
+  function handleTemplateTemperature(temperature:number){
+    setCurrentTemperature(temperature);
   }
-  function handleDelete(id:string){
-    const deletedLogs = productLogs.filter(log => log.id !== id);
-    setProductLogs(deletedLogs);
+  function handleOperation(operation:Operation){
+    setCurrentOperation(operation);
   }
-  const priceTaxIncluded = calculateTaxIncluded(currentTotal);
   return(
     <>
-      <DisplayTotalPrice price={currentTotal} priceTaxIncluded={priceTaxIncluded}/>
+      <TempDisplay temperature={currentTemperature} currentOperation={currentOperation}/>
       <div>
-        {products.map((product, productIndex)=><ProductByButton key={productIndex} name={product.name} price={product.price} handleClick={()=>handleBuy(product.name, product.price)} />)}
-        <button onClick={handleReset}>リセット</button>
+        <ChangeTemperatureButton isWarm={true} handleClick={handleTemperature}/>
+        <ChangeTemperatureButton isWarm={false} handleClick={handleTemperature}/>
       </div>
-      <DisplayLogs logs={productLogs} handleDelete={handleDelete}/>
+      <div>
+        {templateTemperatures.map(item => <ChangeTemplateTemperature key={item.name} name={item.name} temperature={item.temperature} handleClick={handleTemplateTemperature}/>)}
+      </div>
+      <div>
+        <ChangeOperation handleClick={handleOperation} operation="heating"/>
+        <ChangeOperation handleClick={handleOperation} operation="cooling"/>
+        <ChangeOperation handleClick={handleOperation} operation="blower"/>
+      </div>
     </>
   );
-}
-
-// utils関数
-function calculateTaxIncluded(price:number):number{
-  return Math.floor(price * TAX);
-}
-function formatPrice(price:number):string{
-  return price.toLocaleString("ja-JP", {
-    style:"currency",
-    currency:"JPY"
-  })
 }
