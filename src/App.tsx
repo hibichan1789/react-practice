@@ -2,56 +2,48 @@
 
 import { useState } from "react";
 
-type ProductItemProps = {
-  name:string;
-  count:number;
+const highCountStyle =  {
+  color:"red"
 }
-function ProductItem({name, count}:ProductItemProps){
-  return(<span>{name} {count}個</span>);
+function Display({count}:{count:number}){
+  return <p style={count>=100 ? highCountStyle : {}}>{count}</p>
 }
-type CountButtonProps = {
-  isAdd:boolean;
-  clickAction:()=>void;
+function CountButton({countDiff, isAdd, clickAction}:{countDiff:number, isAdd:boolean, clickAction:()=>void}){
+  return(
+    <button onClick={clickAction}>{isAdd ? "+" : "-"} {countDiff}</button>
+  );
 }
-function CountButton({isAdd, clickAction}:CountButtonProps){
-  return <button onClick={clickAction}>{isAdd ? "+" : "-"}</button>
+function ResetButton({clickAction}:{clickAction:()=>void}){
+  return <button onClick={clickAction}>Reset</button>
 }
-type Product = {
-  name:string;
-  count:number;
-}
-const products:Product[] = [
-  {name:"リンゴ", count: 10},
-  {name:"バナナ", count: 8}
-]
-export default function ShoppingCart(){
-  const [productItems, setProductItems] = useState(products.map(product => product));
-  function clickCount(targetName:string, isAdd:boolean){
-    const newProductItem = productItems.map(item =>{
-      if(item.name !== targetName){
-        return item;
-      }
-      if(isAdd){
-        return {...item, count:item.count + 10};
-      }
-      return {...item, count:item.count === 0 ? item.count : item.count - 10};
-    });
-    setProductItems(newProductItem);
+const initialCount = 100;
+const countDiff = 10;
+export default function AppComponent(){
+  const [currentCount, setCurrentCount] = useState<number>(initialCount);
+  function countAction(isAdd:boolean){
+    if(isAdd){
+      setCurrentCount(currentCount + countDiff);
+      return;
+    }
+    
+    if(currentCount - countDiff < 0){
+      return;
+    }
+    setCurrentCount(currentCount - countDiff);
+  }
+  function resetAction(){
+    setCurrentCount(initialCount);
   }
   return(
     <>
-    {productItems.map(item => {
-    return(
-      <div key={item.name}>
-        <CountButton isAdd={true} clickAction={()=>clickCount(item.name, true)}/>
-        <ProductItem  name={item.name} count={item.count}/>
-        <CountButton isAdd={false} clickAction={()=>clickCount(item.name, false)}/>
+      <Display count={currentCount}/>
+      <div>
+        <CountButton countDiff={countDiff} isAdd={true} clickAction={()=>countAction(true)} />
+        <CountButton countDiff={countDiff} isAdd={false} clickAction={()=>countAction(false)}/>
       </div>
-    );
-    })}
-    <div>
-          <p>合計: {productItems.reduce((sum, item)=>sum + item.count, 0)}</p>
-    </div>
+      <div>
+        <ResetButton clickAction={()=>resetAction()}/>
+      </div>
     </>
-  )
+  );
 }
